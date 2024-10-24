@@ -69,11 +69,11 @@ def main(config):
 
     llm = create_llm('gpt-4-1106-preview')
     llm.setup_cache(cache_mode, database_path=config.database_path)
-    llm.set_default_kwargs({'timeout': 60, 'request_timeout': 60})
+    llm.set_default_kwargs({'timeout': 60})
 
     llm_exp = create_llm('gpt-4-1106-preview')
     llm_exp.setup_cache(cache_mode, database_path=config.database_path)
-    llm_exp.set_default_kwargs({'timeout': 60, 'request_timeout': 60})
+    llm_exp.set_default_kwargs({'timeout': 60})
     log.info(f'Creating llms [using memory: {config.use_memory}]... DONE')
     # -------------------------
 
