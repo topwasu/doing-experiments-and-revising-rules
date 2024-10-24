@@ -1,0 +1,15 @@
+You'll be given two lists of words, list of related words and list of unrelated words. They may or may not be empty ([] means empty). Your task is to guess a topic such that the related words are related to the topics, while the unrelated words are not related to the topics. Here are two examples:
+
+Example 1:
+Related words: ['knife']
+Unrelated words: []
+Topic: Weapons that could be used to hunt animals
+
+Example 2:
+Related words: ['knife']
+Unrelated words: ['bows', 'guns']
+Topic: Cooking tools
+
+You can see how we change our guess from 'Weapons that could be used to hunt animals' to 'Cooking tools' when we know that 'bows' and 'guns', which are weapons to hunt animal, are not related to the topic, while knife is also used in cooking.
+
+Now it's your turn, the related words and unrelated words are as follows:

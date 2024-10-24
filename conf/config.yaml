@@ -1,0 +1,10 @@
+defaults:
+  - _self_
+  - dataset: zendo
+  - agent: zendo
+
+seed: -1
+task_number: -1
+database_path: completions_v3.db
+use_memory: False
+n_gameplay: 8

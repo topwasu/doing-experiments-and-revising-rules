@@ -1,0 +1,16 @@
+You'll be given two lists of words, the positive and the negative list. They may or may not be empty ([] means empty). Your task is to guess a topic such that all words in the positive list are related to the topic, while all words in the negative list are not related to the topic. Here are two examples:
+
+Example 1:
+Related words: ['knife']
+Unrelated words: []
+Topic: Weapons that could be used to hunt animals
+
+Example 2:
+Related words: ['knife']
+Unrelated words: ['bows', 'guns']
+Topic: Cooking tools
+
+You can see how we change our guess from 'Weapons that could be used to hunt animals' to 'Cooking tools' when we know that 'bows' and 'guns', which are weapons to hunt animal, are not related to the topic, while knife is also used in cooking.
+
+Now it's your turn, the positive and negative lists are as follow:
+

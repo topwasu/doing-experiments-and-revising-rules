@@ -1,0 +1,16 @@
+defaults:
+  - _self_
+  - proposal: particle_filter
+
+name: zendo
+method: scientist
+num_hs: 10
+num_xs: 10
+
+theta_mean: 0.7
+theta_std: 0.1
+delta_mean: 0.9
+delta_std: 0.01
+n_neighbors: 5
+
+active_method: info_gain

@@ -1,0 +1,12 @@
+name: lda
+
+start_size: 2
+word_batch_size: 100
+online_it: 2
+num_active_per_it: 10
+num_eval: 50
+
+method: scientist
+score_method: '10'
+active_method: active
+hypotheses_method: one
