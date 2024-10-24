@@ -9,26 +9,14 @@ log = logging.getLogger(__name__)
 
 
 class LLMNaiveZendo:
-    def __init__(self, config, zendo_config, stacking_flag=False):
+    def __init__(self, config, zendo_config):
         self.config = config
         self.zendo_config = zendo_config
         self.llm = create_llm('gpt-4-1106-preview')
         # self.llm.setup_cache('disk')
-        if stacking_flag:
-            self.att_par = """color (blue/red/green) 
-size (small/medium/large)
-orientation (upright/left/right/strange)
-groundedness (grounded/ungrounded/stacking),
-touching (which other blocks they do and do not touch)."""
-        else:
-            self.att_par = """color (blue/red/green) 
-size (small/medium/large)
-orientation (upright/left/right/strange)
-groundedness (grounded/ungrounded),
-touching (which other blocks they do and do not touch)."""
 
     def play_zendo(self, moderator, game, test_set=None):
-        conversation = [play_zendo_hard_prompt.format(text_c=game.to_text(), att_par=self.att_par)]
+        conversation = [play_zendo_hard_prompt.format(text_c=game.to_text())]
         ct = 1
         while ct < 8:
             summary = self.llm.prompt([conversation], temperature=0, seed=self.config.seed)[0]

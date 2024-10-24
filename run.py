@@ -9,8 +9,10 @@ import json
 
 from agents.lda import LLMScientistLDA, LLMNaiveLDA
 from agents.zendo import LLMNaiveZendo, LLMScientistZendo
+from agents.acre import LLMNaiveACRE, LLMScientistACRE
 from data.lda import get_lda, get_lda_mini, LDAConfig
-from data.zendo import get_zendo_rules_and_examples, get_adv_zendo_rules_and_examples, ZendoModerator, ZendoGame, ZendoConfig, AdvZendoConfig, AdvZendoConfigStacking
+from data.zendo import get_zendo_rules_and_examples, get_adv_zendo_rules_and_examples, ZendoModerator, ZendoGame, ZendoConfig, AdvZendoConfig
+from data.acre import get_acre_rules_and_examples, ACREModerator, ACREGame
 from toptoolkit.logging.logging import init_logger, log_to_file
 from toptoolkit.llm import create_llm
 
@@ -62,7 +64,8 @@ def main(config):
         results = model.evaluate(test_dataloader, ind2word)
         log.info(f'Recall@50 (%): {np.asarray(results)/50}')
         log.info(f'Average Recall@50 (%): {np.mean(np.asarray(results)/50, 0)}')
-    else:
+
+    elif config.dataset.name.startswith('zendo'):
         # secret_rules, examples = get_zendo_rules_and_examples()
         # zendo_config = ZendoConfig
         # rule = secret_rules[-3] # CHOOSE
@@ -71,9 +74,6 @@ def main(config):
 
         secret_rules, rule_names, rule_programs, examples, test_sets = get_adv_zendo_rules_and_examples(config.dataset.extra)
         zendo_config = AdvZendoConfig
-        # for k in secret_rules:
-        #     log.info(f"K {k}")
-        # for k in ['zeta', 'phi', 'upsilon', 'iota', 'kappa', 'omega', 'mu', 'nu', 'xi']:
         if config.seed == -1:
             seeds = [0, 1, 2, 3, 4]
         else:
@@ -81,7 +81,6 @@ def main(config):
         alls, trues, falses = [], [], []
         alls2, trues2, falses2 = [], [], []
         raws = []
-        extra_posteriors = []
 
         # ---- Construct llms ----
         log.info(f'Creating llms [using memory: {config.use_memory}]...')
@@ -112,10 +111,7 @@ def main(config):
             task_list = rule_names
             # task_list = ['zeta', 'phi', 'upsilon', 'iota', 'kappa', 'omega', 'mu', 'nu', 'xi']
             if config.task_number != -1:
-                if isinstance(config.task_number, int):
-                    task_list = [task_list[config.task_number]]
-                else:
-                    task_list = [task_list[x] for x in config.task_number]
+                task_list = [task_list[config.task_number]]
             for k in task_list:
 
                 set_seed(seed)
@@ -125,20 +121,14 @@ def main(config):
                 rule = secret_rules[k]
                 game = ZendoGame(examples[k], ['yes'])
                 log.info(f"Secret rules = {rule}\n Example: \n {game.to_text()}")
-                stacking_flag = False
-                for block in game.structures[0].blocks:
-                    if block.stacking is not None:
-                        stacking_flag = True
-                        zendo_config = AdvZendoConfigStacking
+
+                if config.agent.method == 'scientist':
+                    model = LLMScientistZendo(config, zendo_config, poor_llm=poor_llm, llm=llm, llm_exp=llm_exp)
+                elif config.agent.method == 'naive':
+                    model = LLMNaiveZendo(config, zendo_config)
 
                 moderator = ZendoModerator(rule, rule_programs[k])
-                if config.agent.method == 'scientist':
-                    model = LLMScientistZendo(config, zendo_config, poor_llm=poor_llm, llm=llm, llm_exp=llm_exp, stacking_flag=stacking_flag)
-                    res, prob_res, support, phat_h_given_c = model.play_zendo(moderator, game, test_sets[k])
-                elif config.agent.method == 'naive':
-                    model = LLMNaiveZendo(config, zendo_config, stacking_flag=stacking_flag)
-                    res, prob_res = model.play_zendo(moderator, game, test_sets[k])
-                    support, phat_h_given_c = [], []
+                res, prob_res = model.play_zendo(moderator, game, test_sets[k])
                 log.info(f"Rule {k}: res {res}")
                 log.info(f"Rule {k}: prob res {prob_res}")
                 true_res = ([True] * 4) + ([False] * 4)
@@ -176,13 +166,6 @@ def main(config):
 
             raws.append(np.concatenate(raw_scores))
 
-            if config.dataset.extra:
-                for h, phat in zip(support, phat_h_given_c):
-                    if h == 'The majority of blocks are red.':
-                        extra_posteriors.append(phat)
-                log.info(f'Final posterior: {dict(zip(support, phat_h_given_c))}')
-                        
-
         all_m, all_h = mean_confidence_interval(alls)
         true_m, true_h = mean_confidence_interval(trues)
         false_m, false_h = mean_confidence_interval(falses)
@@ -200,12 +183,102 @@ def main(config):
         log.info(f'avg false_prob_scores: {list(false_m2)} +/- {list(false_h2)}')
         log.info(f'avg avg_prob_scores: {np.mean(all_m2)}')
 
-        posterior_m, posterior_h = mean_confidence_interval(extra_posteriors)
-        log.info(f"Approximated posterior for 'The majority of blocks are red.' is {posterior_m} +/- {posterior_h}")
+        log.info(f'Dumping cache to disk...')
+        poor_llm.cache.dump_to_disk()
+        llm.cache.dump_to_disk()
+        llm_exp.cache.dump_to_disk()
+        log.info(f'Dumping cache to disk... DONE')
+    else:
+        rules, train_games, test_games = get_acre_rules_and_examples()
 
-        log.info('Saving npy')
-        with open(os.path.join(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir, 'raw.npy'), 'wb') as f:
-            np.save(f, np.asarray(raws))
+        # TODO
+        rules = rules[:20]
+        train_games = train_games[:20]
+        test_games = test_games[:20]
+
+        log.debug(train_games[0].to_text())
+
+        # ---- Construct llms ----
+        log.info(f'Creating llms [using memory: {config.use_memory}]...')
+        cache_mode = 'disk_to_memory' if config.use_memory else 'disk'
+
+        poor_llm = create_llm('gpt-3.5-turbo')
+        poor_llm.setup_cache(cache_mode, database_path=config.database_path)
+
+        llm = create_llm('gpt-4-1106-preview')
+        llm.setup_cache(cache_mode, database_path=config.database_path)
+        llm.set_default_kwargs({'timeout': 60, 'request_timeout': 60})
+
+        llm_exp = create_llm('gpt-4-1106-preview')
+        llm_exp.setup_cache(cache_mode, database_path=config.database_path)
+        llm_exp.set_default_kwargs({'timeout': 60, 'request_timeout': 60})
+        log.info(f'Creating llms [using memory: {config.use_memory}]... DONE')
+        # -------------------------
+
+        alls = []
+        alls2 = []
+        all_prob_res = []
+        raws = []
+        alls3 = []
+        alls4 = []
+        alls5 = []
+        for idx, (rule, train_game, test_game) in enumerate(zip(rules, train_games, test_games)):
+            if idx < 13: 
+                continue
+            if config.seed == -1:
+                set_seed(0)
+            else:
+                set_seed(config.seed)
+            log.info(f'Game {idx}')
+            log.info(f'Game {idx} Rule = {rule}')
+            log.info(f'Game {idx} Train game = {train_game.to_text()}')
+            if config.agent.method == 'scientist':
+                model = LLMScientistACRE(config, list(rule.keys()), poor_llm=poor_llm, llm=llm, llm_exp=llm_exp)
+            elif config.agent.method == 'naive':
+                model = LLMNaiveACRE(config, list(rule.keys()), llm=llm)
+            moderator = ACREModerator(rule)
+            res, prob_res, roc_auc, f1, task_solved = model.play(moderator, train_game, test_game)
+
+            all_prob_res.append(prob_res)
+            alls.append(np.mean(res))
+            alls2.append(np.mean(prob_res))
+            alls3.append(roc_auc)
+            alls4.append(f1)
+            alls5.append(task_solved)
+
+            log.info(f'Game {idx} Ground Truth Rule = {rule}')
+            # log.info(f'Game {idx} Test game = {test_game.to_text()}')
+
+            log.info(f'Game {idx}: res {res}')
+            log.info(f"Game {idx}: prob res {prob_res}")
+            log.info(f'Game {idx}: score {np.mean(res)}')
+            log.info(f"Game {idx}: prob score {np.mean(prob_res)}")
+            log.info(f"Game {idx}: roc auc {roc_auc}")
+            log.info(f"Game {idx}: f1 {f1}")
+            log.info(f"Game {idx}: task_solved {task_solved}")
+
+            log.info(f'Running avg score = {np.mean(alls2)}')
+            log.info(f'Running avg prob score = {np.mean(alls2)}')
+            log.info(f'Running avg roc auc = {np.mean(alls3)}')
+            log.info(f'Running avg f1 = {np.mean(alls4)}')
+            log.info(f'Running avg task_solved = {np.mean(alls5)}')
+
+        raws = np.concatenate(all_prob_res)
+
+        all_m, all_h = mean_confidence_interval(alls)
+        log.info(f'avg avg_score: {all_m} +/- {all_h}')
+
+        all2_m, all2_h = mean_confidence_interval(alls2)
+        log.info(f'avg avg_prob_scores: {all2_m} +/- {all2_h}')
+
+        all3_m, all3_h = mean_confidence_interval(alls3)
+        log.info(f'avg roc auc: {all3_m} +/- {all3_h}')
+
+        all4_m, all4_h = mean_confidence_interval(alls4)
+        log.info(f'avg f1: {all4_m} +/- {all4_h}')
+
+        all5_m, all5_h = mean_confidence_interval(alls5)
+        log.info(f'avg task_solved: {all5_m} +/- {all5_h}')
 
         log.info(f'Dumping cache to disk...')
         try:
@@ -216,8 +289,11 @@ def main(config):
         except:
             log.info(f'No dumping')
 
+
     with open(os.path.join(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir, 'raw.npy'), 'wb') as f:
         np.save(f, np.asarray(raws))
+
+
 
 
 if __name__ == '__main__':

@@ -24,7 +24,11 @@ To give you a start, I'll describe one structure that follows the rule:
 play_zendo_hard_prompt = """You are playing an inductive game with me. I'll be the moderator, and your task is to figure out the secret rule that I know by coming up with a structure of blocks to ask me whether it conforms with the secret rule or not. 
 
 The structure has one of more blocks. Each block should contain the following attributes: 
-{att_par}
+color (blue/red/green) 
+size (small/medium/large)
+orientation (upright/left/right/strange)
+groundedness (grounded/ungrounded),
+touching (which other blocks they do and do not touch).
 
 To give you a start, I'll describe one structure that follows the rule:
 
@@ -54,7 +58,7 @@ class ZendoBlock:
     :param color: str (blue/red/green) 
     :param size: str (small/medium/large)
     :param orientation: str (upright/left/right/strange)
-    {groundedness_param_msg}
+    :param groundedness: bool
     :param touching: list of int (index starts at 1)
 
 The signature for the synthesized program should be

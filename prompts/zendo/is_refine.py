@@ -30,7 +30,11 @@ Please number them from 1-{num} and do not say anything else
 """
 
 refine_prompt = """A structure has one or more blocks. Each block should contain the following attributes: 
-{att_par}
+color (blue/red/green) 
+size (small/medium/large)
+orientation (upright/left/right/strange)
+groundedness (grounded/ungrounded),
+touching (which other blocks they do and do not touch).
 
 Consider the following rule: '{h}'
 

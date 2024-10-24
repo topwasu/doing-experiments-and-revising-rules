@@ -4,3 +4,4 @@ num_max_calls_per_it: 5
 num_required_hypotheses: 10
 num_refine_it: 9
 deterministic: True
+prompt_w_example: False

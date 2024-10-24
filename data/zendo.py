@@ -44,34 +44,6 @@ class AdvZendoConfig:
                 v = '/'.join(rng.permutation(v_list))
             txt += f'{k} ({v})\n'
         return txt
-    
-
-class AdvZendoConfigStacking(AdvZendoConfig):
-    att = ['colors', 'sizes', 'orientations', 'groundedness', 'touchings']
-    att_choices = {
-        'colors': 'blue/red/green',
-        'sizes': 'small/medium/large',
-        'orientations': 'upright/left/right/strange',
-        'groundedness': 'grounded/ungrounded/stacking',
-        'touchings': 'none/blocks it touch or stack',
-    }
-    att_choices_list = {
-        'colors': ['blue', 'red', 'green'],
-        'sizes': ['small', 'medium', 'large'],
-        'orientations': ['upright', 'left', 'right', 'strange'],
-        'groundedness': [True, False],
-    }
-    spec = "color (blue/red/green)\nsize (small/medium/large)\norientation (upright/left/right/strange)\ngroundedness (grounded/ungrounded/stacking)\ntouching (none/blocks it touch or stack)"
-    example_block = "- Block 1: Color - color, Size - size, Orientation - orientation, Groundedness - groundedness, Touching - touching"
-
-    def get_spec(rng=None): 
-        txt = ""
-        for k, v in AdvZendoConfigStacking.att_choices.items():
-            if rng is not None:
-                v_list = v.split('/')
-                v = '/'.join(rng.permutation(v_list))
-            txt += f'{k} ({v})\n'
-        return txt
 
 
 def get_zendo_rules_and_examples():
@@ -157,11 +129,11 @@ def get_zendo_rules_and_examples():
     return simple_rules, examples
 
 
-def raw_to_structure(example_raw):
+def raw_to_stucture(example_raw):
     EPS = np.pi/6
     blocks = []
     contact = list(example_raw['contact'][0].values()) if isinstance(example_raw['contact'][0], dict) else example_raw['contact']
-
+    # TODO Touching is off by 1 -- add 1 please
     for i in range(len(example_raw['colours'])):
         color = example_raw['colours'][i].lower()
         size = ['small', 'medium', 'large'][example_raw['sizes'][i] - 1]
@@ -178,23 +150,9 @@ def raw_to_structure(example_raw):
         touching = contact[i] if isinstance(contact[i], list) else [i]
         touching.remove(i)
 
-        stacking = None
-        if not grounded and orientation == 'upright' and len(touching) > 0:
-            for idx in touching:
-                grounded2 = example_raw['grounded'][idx]
-                rot = example_raw['rotations'][idx] % (2 * np.pi)
-                orientation_upright2 = (abs(rot - np.pi) < EPS)
-                same_xpos = (abs(example_raw['xpos'][idx] - example_raw['xpos'][i]) < 0.01)
-                if grounded2 and orientation_upright2 and same_xpos:
-                    stacking = idx
-                    break
-
-        # Fix index
         touching = [x + 1 for x in touching]
-        if stacking is not None:
-            stacking = stacking + 1
 
-        blocks.append(ZendoBlock(color, size, orientation, grounded, touching, stacking))
+        blocks.append(ZendoBlock(color, size, orientation, grounded, touching))
     return ZendoStructure(blocks)
 
 def get_zendo_rules_and_data():
@@ -207,8 +165,7 @@ def get_zendo_rules_and_data():
         "omega": "all blocks are blue or small",
         "mu": "a red block is the largest block",
         "nu": "some blocks are touching",
-        "xi": "a blue block touches a red block",
-        "psi": "some blocks are stacking"
+        "xi": "a blue block touches a red block"
     }
 
     programs = {
@@ -220,11 +177,10 @@ def get_zendo_rules_and_data():
         "omega": omega_program,
         "mu": mu_program,
         "nu": nu_program,
-        "xi": xi_program,
-        "psi": psi_program
+        "xi": xi_program
     }
 
-    rule_names = ["zeta", "phi", "upsilon", "iota", "kappa", "omega", "mu", "nu", "xi", "psi"]
+    rule_names = ["zeta", "phi", "upsilon", "iota", "kappa", "omega", "mu", "nu", "xi"]
 
     with open('data/zendo_cases.json', 'r') as f:
         data_list = json.load(f)
@@ -233,17 +189,21 @@ def get_zendo_rules_and_data():
 
 def get_extra_zendo_rules_and_data():
     rules = {
-        "red": "majority is red"
+        "more": "more reds than blues", 
+        "same": "same number of small and large blocks",
+        "even": "even number of blocks oriented right",
     }
 
     programs = {
-        "red": red_program
+        "more": more_program, 
+        "same": same_program,
+        "even": even_program
     }
 
-    rule_names = ["red"]
+    rule_names = ["more", "same", "even"]
 
     with open('data/zendo_cases_extra.json', 'r') as f:
-        data_list = json.load(f)[1:]
+        data_list = json.load(f)
     
     return rules, programs, rule_names, data_list
 
@@ -252,8 +212,8 @@ def get_adv_zendo_rules_and_examples(extra):
     examples = {}
     test_sets = {}
     for rule_name, data in zip(rule_names, data_list):
-        examples[rule_name] = [raw_to_structure(data['t'][0])]
-        test_sets[rule_name] = [raw_to_structure(data['t'][i]) for i in range(1, 5)] + [raw_to_structure(data['f'][i]) for i in range(1, 5)]
+        examples[rule_name] = [raw_to_stucture(data['t'][0])]
+        test_sets[rule_name] = [raw_to_stucture(data['t'][i]) for i in range(1, 5)] + [raw_to_stucture(data['f'][i]) for i in range(1, 5)]
 
     return rules, rule_names, programs, examples, test_sets
 
@@ -278,7 +238,7 @@ class ZendoModerator:
     
 
 class ZendoBlock:
-    def __init__(self, color=None, size=None, orientation=None, groundedness=None, touching=None, stacking=None, txt=None):
+    def __init__(self, color=None, size=None, orientation=None, groundedness=None, touching=None, txt=None):
         """
         :param color: str
         :param size: str
@@ -296,12 +256,9 @@ class ZendoBlock:
             self.color = color.strip(' .\n').lower()
             self.size = size.strip(' .\n').lower()
             self.orientation = orientation.strip(' .\n').lower()
-            self.groundedness_str = 'stacking' if stacking else 'grounded' if groundedness else 'ungrounded'
             self.groundedness = groundedness
             self.touching = touching
-            self.stacking = stacking
         if txt is not None:
-            self.stacking = None
             try:
                 res = []
                 for att in ['Color', 'Size', 'Orientation', 'Groundedness', 'Touching']:
@@ -317,31 +274,16 @@ class ZendoBlock:
                 return
 
             if self.groundedness is not None:
-                self.groundedness_str = self.groundedness
                 self.groundedness = (self.groundedness == 'grounded')
             if self.touching is not None:
                 if self.touching.strip(' .\n').lower() == 'none':
                     self.touching = []
                 else:
                     try:
-                        res = []
-                        for block_str in self.touching.split(', '):
-                            if block_str.endswith(' (stacking)'):
-                                res.append(int(block_str[len('Block '):-11]))
-                                self.stacking = res[-1]
-                            else:
-                                res.append(int(block_str[len('Block '):]))
-                        self.touching = res
+                        self.touching = [int(block_str[len('Block '):]) for block_str in self.touching.split(', ')]
                     except:
                         print(f'Cannot parse {self.touching} for touching - will assume it does not touch anything')
                         self.touching = []
-
-            # They must indicate which block it's stacking on -- other wise 
-            if self.stacking == None and self.groundedness_str == 'stacking':
-                self.groundedness_str = 'grounded'
-                self.groundedness = True
-            if self.stacking is not None and self.groundedness_str != 'stacking':
-                self.stacking = None
 
         if self.groundedness is not None and self.touching is not None:
             self.adv_mode = True
@@ -362,8 +304,7 @@ class ZendoBlock:
                     raise Exception(f'attribute {att} not recognized')
                 
                 if att == 'groundedness':
-                    # return 'grounded' if self.groundedness else 'ungrounded'
-                    return self.groundedness_str
+                    return 'grounded' if self.groundedness else 'ungrounded'
                 elif att == 'touchings':
                     # return  ', '.join([f'Block {bid}' for bid in self.touching]) if len(self.touching) > 0 else 'None'
                     return f'{len(self.touching)} Block(s)'
@@ -371,9 +312,8 @@ class ZendoBlock:
                 raise Exception(f'attribute {att} not recognized')
         
         if self.adv_mode:
-            # groundedness_str = 'grounded' if self.groundedness else 'ungrounded'
-            groundedness_str = self.groundedness_str
-            touching_str = ', '.join([f'Block {bid}{" (stacking)" if bid == self.stacking else ""}' for bid in self.touching]) if len(self.touching) > 0 else 'None'
+            groundedness_str = 'grounded' if self.groundedness else 'ungrounded'
+            touching_str = ', '.join([f'Block {bid}' for bid in self.touching]) if len(self.touching) > 0 else 'None'
             lst = np.asarray([f"Block: Color - {self.color}", f"Size - {self.size}", f"Orientation - {self.orientation}", f"Groundedness - {groundedness_str}", f"Touching - {touching_str}"])
             if order is None:
                 order = [0, 1, 2, 3, 4]
@@ -383,7 +323,7 @@ class ZendoBlock:
 
 
 class ZendoStructure:
-    def __init__(self, blocks=None, txt=None, random_block_rng=None, stacking_flag=False):
+    def __init__(self, blocks=None, txt=None, random_block_rng=None):
         if blocks is None and txt is None and random_block_rng is None:
             raise Exception("Everything can't be None")
         if blocks is not None:
@@ -402,25 +342,8 @@ class ZendoStructure:
                     touchings[x].append(idx + 1)
             for idx, block in enumerate(self.blocks):
                 block.touching = sorted(set(touchings[idx + 1]))
-
-            # Ensure uprights for stacking block
-            stacked_on = {}
-            for block in self.blocks:
-                if block.groundedness_str == 'stacking':
-                    if block.stacking - 1 in stacked_on: # Stacking collision
-                        block.groundedness_str = 'grounded'
-                        block.groundedness = True
-                        block.stacking = None
-                        continue
-                    stacked_on[block.stacking - 1] = True 
-                    block.orientation = 'upright' # Fix orientation
-                    self.blocks[block.stacking - 1].orientation = 'upright' # Fix orientation
-                    if self.blocks[block.stacking - 1].groundedness_str == 'ungrounded': # Can only stack on grounded or stacking blocks
-                        self.blocks[block.stacking - 1].groundedness_str = 'grounded'
-                        self.blocks[block.stacking - 1].groundedness = True
-
         if random_block_rng is not None:
-            self.blocks = self.create_random_structure(random_block_rng, stacking_flag)
+            self.blocks = self.create_random_structure(random_block_rng)
             
 
     def to_text(self, att=None, order=None):
@@ -438,8 +361,7 @@ class ZendoStructure:
     def __len__(self):
         return len(self.blocks)
     
-    def create_random_structure(self, rng, stacking_flag):
-        # TODO: Add stacking only when there is stacking
+    def create_random_structure(self, rng):
         blocks = []
         n_blocks = rng.integers(5) + 1
         for _ in range(n_blocks):
@@ -463,43 +385,19 @@ class ZendoStructure:
                 blocks[y].touching.append(x + 1)
             for block in blocks:
                 block.touching = sorted(block.touching)
-
-        if stacking_flag:
-            stacked_on = {}
-            for block in blocks:
-                # if (not block.groundedness) and rng.integers(2) == 0:
-                if (not block.groundedness):
-
-                    for touching_block_idplusone in rng.permutation(block.touching):
-                        if blocks[touching_block_idplusone - 1].groundedness: # Find grounded blocks
-                            block.stacking = touching_block_idplusone
-                            break
-                    if block.stacking is None:
-                        continue
-
-                    block.groundedness_str = 'stacking'
-
-                    if block.stacking - 1 in stacked_on: # Stacking collision
-                        block.groundedness_str = 'grounded'
-                        block.groundedness = True
-                        block.stacking = None
-                        continue
-                    stacked_on[block.stacking - 1] = True 
-                    block.orientation = 'upright'
-                    blocks[block.stacking - 1].orientation = 'upright'
         
         return blocks
 
 
 class ZendoGame:
-    def __init__(self, structures, labels, seed=0):
-        self.structures = structures
-        self.labels = labels
+    def __init__(self, xs, ys, seed=0):
+        self.xs = xs
+        self.ys = ys
         # self.rng = np.random.default_rng(seed)
 
         self.good_xs = []
         self.bad_xs = []
-        for x, y in zip(self.structures, self.labels):
+        for x, y in zip(self.xs, self.ys):
             if y == 'yes':
                 self.good_xs.append(x)
             else:
@@ -533,8 +431,8 @@ class ZendoGame:
         return xs[indices[0]], labels[indices[0]], xs[indices[1]], labels[indices[1]]
     
     def append_and_retnew(self, x, y):
-        new_game = ZendoGame(list(self.structures) + [x], list(self.labels) + [y])
+        new_game = ZendoGame(list(self.xs) + [x], list(self.ys) + [y])
         return new_game
 
     def __len__(self):
-        return len(self.structures)
+        return len(self.xs)

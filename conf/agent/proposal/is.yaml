@@ -3,3 +3,4 @@ num_hypotheses_per_call: 5
 num_max_calls_per_it: 5
 num_required_hypotheses: 10
 deterministic: False
+prompt_w_example: False

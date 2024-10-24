@@ -3,7 +3,7 @@ import logging
 import numpy as np
 
 from agents.zendo import LLMScientistZendo
-from data.zendo import ZendoBlock, ZendoStructure, ZendoGame, AdvZendoConfig, AdvZendoConfigStacking
+from data.zendo import ZendoBlock, ZendoStructure, ZendoGame, AdvZendoConfig
 from toptoolkit.llm import create_llm
 from toptoolkit.logging.logging import init_logger
 
@@ -75,17 +75,18 @@ def test_eval_y_given_xh(config):
         # Should get 0, 1, 0, 1
 
 def test_proposal_r(config):
-    agent = LLMScientistZendo(config, AdvZendoConfigStacking, stacking_flag=True)
+    agent = LLMScientistZendo(config, AdvZendoConfig)
     hs = [
         # 'Color: At least one block must be a color other than blue.',
         # 'Color: At least one block must be blue.',
-        'There is a stacking block',
+        'Touching: Not all blocks are touching each other.',
         # 'Groundedness: There cannot be more than one ungrounded block.'
     ]
-    xs = asyncio.run(agent.a_sample_proposal_r_handler(hs))
-    print(hs)
-    for x in xs:
-        print(x.to_text())
+    for h in hs:
+        xs = asyncio.run(agent.a_sample_proposal_r(h))
+        print(h)
+        for x in xs:
+            print(x)
 
 
 def test_proposal_prompt(config):
@@ -191,26 +192,49 @@ def test_refine(config):
     hs = asyncio.run(agent.a_refine_hs(hs, c))
     log.info(hs)
 
+def test_random_blocks(config):
+    # config.agent.proposal = 'is_refine'
+    rng = np.random.default_rng()
+    for _ in range(50):
+        log.info(ZendoStructure(random_block_rng=rng).to_text())
+
+def test_llm_active(config):
+    from utils import list_to_str
+    hs = ['The blocks are not all the same size.',
+        'There is more than one grounded block.',
+        'There is a red block.',
+        'There are more upright blocks than left blocks.',
+        'All blocks are either red or green.',
+        'There is a small block.',
+        'There is no large block.',
+        'There is a green block.',
+        'There is exactly one ungrounded block.',
+        'There is a grounded block.']
+    hs = ['There is two red blocks',
+          'There is two blue blocks', 
+          'There are two small blocks',
+          'There are at least two blocks']
+
+
+    agent = LLMScientistZendo(config, AdvZendoConfig)
+    res = asyncio.run(agent.a_sample_proposal_r_llm(hs))
+    a = ZendoStructure(txt=res)
+    log.info(a.to_text())
+
+
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(config):
     # test_rep(config)
     # test_proposal_q(config)
     # test_eval_y_given_xh(config)
-    test_proposal_r(config)
+    # test_proposal_r(config)
     # test_proposal_prompt(config)
     # test_evolve(config)
     # test_basic_proposal(config)
     # test_synthesis(config)
     # test_refine(config)
-#     x = ZendoStructure([ZendoBlock('blue', 'small', 'upright', True, [2]), 
-#                         ZendoBlock('blue', 'medium', 'upright', True, [1, 3], 1),
-#                         ZendoBlock('green', 'large', 'flat', False, [2])])
-#     log.info(x.to_text())
-#     x = ZendoStructure(txt="""Structure:
-# - Block 1: Color - blue, Size - small, Orientation - upright, Groundedness - grounded, Touching - Block 2
-# - Block 2: Color - blue, Size - medium, Orientation - upright, Groundedness - grounded, Touching - Block 1 (stacking), Block 3
-# - Block 3: Color - green, Size - large, Orientation - flat, Groundedness - ungrounded, Touching - None""")
-#     log.info(x.to_text())
+    # test_random_blocks(config)
+    test_llm_active(config)
     
 
 if __name__ == '__main__':

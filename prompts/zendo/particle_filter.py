@@ -28,7 +28,11 @@ Quantifier: 'There must be a green block' -> 'There must be a green block and a 
 ]
 
 new_evolve_h_prompt = """A structure has one or more blocks. Each block should contain the following attributes: 
-{att_par}
+color (blue/red/green) 
+size (small/medium/large)
+orientation (upright/left/right/strange)
+groundedness (grounded/ungrounded),
+touching (which other blocks they do and do not touch).
 
 Example of rule modifications: 
 Quantifier change: 'There must be a green block' -> 'There are two green blocks'

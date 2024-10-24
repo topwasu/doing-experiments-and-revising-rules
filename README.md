@@ -1,6 +1,3 @@
 # llm-scientist
 
-TODO 
-- Get stacking flags
-- Get stacking prompts
-- Get stacking in random scene
+Run `python run.py dataset=acre agent=acre agent/proposal=particle_filter_det database_path=acre.db`

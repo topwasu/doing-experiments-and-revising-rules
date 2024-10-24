@@ -2,7 +2,7 @@ defaults:
   - _self_
   - proposal: particle_filter
 
-name: zendo
+name: acre
 method: scientist
 num_hs: 10
 num_xs: 10

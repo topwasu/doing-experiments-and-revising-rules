@@ -1,7 +1,7 @@
 propose_x_prompt = """Given the rule '{h}', please give one structure that conforms with the rule and another structure that violates with the rule. 
 
 A structure has one of more blocks. Each block should contain the following attributes: 
-{spec}{stacking_note}
+{spec}
 
 The format of each structure should be as follows:
 (conforms with the rule) Structure 1:
@@ -21,7 +21,7 @@ The format of each structure should be as follows:
 # """
 
 propose_llm_x_prompt = """A structure has one of more blocks. Each block should contain the following attributes: 
-{spec}{stacking_note}
+{spec}
 
 You are playing a game where you are trying to figure an underlying secret rule governing structures
 

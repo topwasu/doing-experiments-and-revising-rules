@@ -67,10 +67,7 @@ def xi_program(structure):
     return False
 
 def psi_program(structure):
-    for block in structure.blocks:
-        if block.stacking is not None:
-            return True
-    return False
+    raise NotImplementedError
 
 def more_program(structure):
     red_ct, blue_ct = 0, 0
@@ -102,11 +99,3 @@ def even_program(structure):
     if right_ct % 2 == 0:
         return True
     return False
-
-def red_program(structure):
-    red_ct = 0
-    total_blocks = len(structure.blocks)
-    for block in structure.blocks:
-        if block.color == 'red':
-            red_ct += 1
-    return red_ct > total_blocks / 2

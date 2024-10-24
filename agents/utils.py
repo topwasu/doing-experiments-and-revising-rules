@@ -36,10 +36,11 @@ def systematic_resample(weights, N):
     return indexes
 
 
-def feedback_generator(structures, labels): 
+def feedback_generator(structures, labels, possible_labels): 
     txt = ""
     for idx, (structure, label) in enumerate(zip(structures, labels)):
-        flip_label = 'yes' if label == 'no' else 'no'
+        # flip_label = 'yes' if label == 'no' else 'no'
+        flip_label = possible_labels[0] if label == possible_labels[1] else possible_labels[1]
         # actual_output = 'good (follows the rule)' if label == 'yes' else 'bad (does NOT follow the rule)'
         # correct_output = 'good (follows the rule)' if label == 'no' else 'bad (does NOT follow the rule)'
         txt += f"{idx + 1}. {structure.to_text()}"
