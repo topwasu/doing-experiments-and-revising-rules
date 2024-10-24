@@ -1,7 +1,7 @@
 import logging
 
 from prompts.zendo import *
-from toptoolkit.llm import create_llm
+from openai_hf_interface import create_llm
 from data.zendo import ZendoGame, ZendoBlock, ZendoStructure
 
 
