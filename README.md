@@ -1,5 +1,7 @@
 # Doing experiments and revising rules with natural language and probabilistic reasoning
 
+[Paper on Arxiv](https://arxiv.org/abs/2402.06025)
+
 Accepted at NeurIPS 2024
 
 ## Installation
