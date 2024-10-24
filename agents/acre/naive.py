@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, f1_score
 
 from prompts.acre import *
-from toptoolkit.llm import create_llm
+from openai_hf_interface import create_llm
 from data.acre import ACREGroup, ACREGame
 
 

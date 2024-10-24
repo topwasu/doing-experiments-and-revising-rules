@@ -4,7 +4,7 @@ import numpy as np
 
 from agents.zendo import LLMScientistZendo
 from data.zendo import ZendoBlock, ZendoStructure, ZendoGame, AdvZendoConfig
-from toptoolkit.llm import create_llm
+from openai_hf_interface import create_llm
 from toptoolkit.logging.logging import init_logger
 
 import hydra

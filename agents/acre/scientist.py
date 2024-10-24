@@ -5,7 +5,7 @@ from scipy.stats import norm
 
 from data.acre import ACREGroup, ACREGame
 from prompts.acre import *
-from toptoolkit.llm import create_llm
+from openai_hf_interface import create_llm
 from utils import parse_listed_output
 from ..scientist import LLMScientist
 from sklearn.metrics import roc_auc_score, f1_score

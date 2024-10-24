@@ -7,21 +7,17 @@ import scipy
 import scipy.stats
 import json
 
-from agents.lda import LLMScientistLDA, LLMNaiveLDA
 from agents.zendo import LLMNaiveZendo, LLMScientistZendo
 from agents.acre import LLMNaiveACRE, LLMScientistACRE
-from data.lda import get_lda, get_lda_mini, LDAConfig
 from data.zendo import get_zendo_rules_and_examples, get_adv_zendo_rules_and_examples, ZendoModerator, ZendoGame, ZendoConfig, AdvZendoConfig
 from data.acre import get_acre_rules_and_examples, ACREModerator, ACREGame
-from toptoolkit.logging.logging import init_logger, log_to_file
-from toptoolkit.llm import create_llm
+from openai_hf_interface import create_llm
 
 import hydra
 from omegaconf import OmegaConf
 from pathlib import Path
 
 
-init_logger('info')
 log = logging.getLogger(__name__)
 
 
@@ -46,26 +42,7 @@ def main(config):
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("openai").setLevel(logging.WARNING)
 
-    if config.dataset.name.startswith('lda'):
-        if config.dataset.name == 'lda':
-            test_dataloader, ind2word, word2ind = get_lda(config.dataset.split, 1, train=False)
-        elif config.dataset == 'lda_mini':
-            test_dataloader, ind2word, word2ind = get_lda_mini(1)
-        else:
-            raise NotImplementedError
-        
-        if config.agent.method == 'scientist':
-            model = LLMScientistLDA(config)
-        elif config.agent.method == 'naive':
-            model = LLMNaiveLDA(config)
-        else:
-            raise NotImplementedError
-        
-        results = model.evaluate(test_dataloader, ind2word)
-        log.info(f'Recall@50 (%): {np.asarray(results)/50}')
-        log.info(f'Average Recall@50 (%): {np.mean(np.asarray(results)/50, 0)}')
-
-    elif config.dataset.name.startswith('zendo'):
+    if config.dataset.name.startswith('zendo'):
         # secret_rules, examples = get_zendo_rules_and_examples()
         # zendo_config = ZendoConfig
         # rule = secret_rules[-3] # CHOOSE
