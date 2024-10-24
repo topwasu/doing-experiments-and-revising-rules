@@ -1,0 +1,3 @@
+[submodule "openai-hf-interface"]
+	path = openai-hf-interface
+	url = https://github.com/topwasu/openai-hf-interface.git
