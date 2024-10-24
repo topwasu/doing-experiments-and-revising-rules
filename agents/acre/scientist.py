@@ -41,11 +41,11 @@ class LLMScientistACRE(LLMScientist):
         if self.llm is None: 
             self.llm = create_llm('gpt-4-1106-preview')
             self.llm.setup_cache(cache_mode, database_path=config.database_path)
-            self.llm.set_default_kwargs({'timeout': 60, 'request_timeout': 60})
+            self.llm.set_default_kwargs({'timeout': 60})
         if self.llm_exp is None: 
             self.llm_exp = create_llm('gpt-4-1106-preview')
             self.llm_exp.setup_cache(cache_mode, database_path=config.database_path)
-            self.llm_exp.set_default_kwargs({'timeout': 60, 'request_timeout': 60})
+            self.llm_exp.set_default_kwargs({'timeout': 60})
 
         self.particles = []
         self.particle_weights = []
