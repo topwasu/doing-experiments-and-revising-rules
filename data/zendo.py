@@ -3,7 +3,7 @@ import numpy as np
 import random
 
 from prompts.zendo import *
-from toptoolkit.llm import create_llm
+from openai_hf_interface import create_llm
 from .zendo_rule_programs import *
 
 
