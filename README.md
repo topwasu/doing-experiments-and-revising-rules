@@ -1,8 +1,6 @@
-# Doing experiments and revising rules with natural language and probabilistic reasoning
+# Doing Experiments and Revising Rules with Natural Language and Probabilistic Reasoning [NeurIPS 2024]
 
-[Paper on Arxiv](https://arxiv.org/abs/2402.06025)
-
-Accepted at NeurIPS 2024
+[Paper on Arxiv](https://arxiv.org/abs/2402.06025) -- Accepted at NeurIPS 2024
 
 ## Installation
 
@@ -24,4 +22,14 @@ We use `openai-hf-interface`, a prompting package that handles sending requests 
 }
 ```
 Please see [openai-hf-interface](https://github.com/topwasu/openai-hf-interface) for more information.
+
+## Running
+
+Note: please use the `acre` branch to run the ActiveACRE experiments and use the `main` branch to run the Zendo experiments.
+
+Call the below command to run an experiment:
+```
+python run.py agent/proposal=particle_filter # To run online, fuzzy method on Zendo
+python run.py dataset=acre agent=acre agent/proposal=particle_filter # To run online, fuzzy method on ActiveACRE
+```
 
