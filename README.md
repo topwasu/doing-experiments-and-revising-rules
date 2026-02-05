@@ -36,12 +36,10 @@ python run.py dataset=acre agent=acre agent/proposal=particle_filter # To run on
 ## Citation
 
 ```
-@article{piriyakulkij2024doing,
+@inproceedings{piriyakulkij2024doing,
   title={Doing experiments and revising rules with natural language and probabilistic reasoning},
   author={Piriyakulkij, Top and Langenfeld, Cassidy and Le, Tuan Anh and Ellis, Kevin},
-  journal={Advances in Neural Information Processing Systems},
-  volume={37},
-  pages={53102--53137},
+  booktitle={Advances in Neural Information Processing Systems},
   year={2024}
 }
 ```
