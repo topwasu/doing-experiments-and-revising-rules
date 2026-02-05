@@ -33,3 +33,15 @@ python run.py agent/proposal=particle_filter # To run online, fuzzy method on Ze
 python run.py dataset=acre agent=acre agent/proposal=particle_filter # To run online, fuzzy method on ActiveACRE
 ```
 
+## Citation
+
+```
+@article{piriyakulkij2024doing,
+  title={Doing experiments and revising rules with natural language and probabilistic reasoning},
+  author={Piriyakulkij, Top and Langenfeld, Cassidy and Le, Tuan Anh and Ellis, Kevin},
+  journal={Advances in Neural Information Processing Systems},
+  volume={37},
+  pages={53102--53137},
+  year={2024}
+}
+```
